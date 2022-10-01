@@ -46,6 +46,13 @@ public static class Log
         Environment.Exit(exitCode);
     }
 
+    public static void LogColored(string? prefix, ConsoleColor? prefixColor, string message, ConsoleColor messageColor,
+        bool addSpacing, bool log)
+    {
+        if (log)
+            LogColored(prefix, prefixColor, message, messageColor, addSpacing);
+    }
+    
     public static void LogColored(string? prefix, ConsoleColor? prefixColor, string message, ConsoleColor messageColor, bool addSpacing = true)
     {
         if (prefix is not null && prefixColor is not null)

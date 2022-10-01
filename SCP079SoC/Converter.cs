@@ -13,7 +13,7 @@ public static class Converter
         { DebugLevel.Error, LogSeverity.Error }
     };
     
-    public static LogSeverity ToLogServerity(this DebugLevel debugLevel)
+    public static async Task<LogSeverity> ToLogServerity(this DebugLevel debugLevel)
     {
         return DebugLevelToLogSeverity[debugLevel];
     }
