@@ -8,21 +8,21 @@ public static class ConfigManager
 {
     public static BotConfig BotConfig { get; private set; }
     
-    public static void Init()
+    public static async Task Init()
     {
         try
         {
-            if (!File.Exists("Settings.json"));
+            if (!File.Exists("Settings.json"))
             {
-                using (TextWriter tw = new StreamWriter("Settings.json"))
+                await using (TextWriter tw = new StreamWriter("Settings.json"))
                 {
-                    tw.Write(JsonConvert.SerializeObject(new BotConfig(), Formatting.Indented));
+                    await tw.WriteAsync(JsonConvert.SerializeObject(new BotConfig(), Formatting.Indented));
                 }
             }
             
             using (TextReader tr = new StreamReader("Settings.json"))
             {
-                BotConfig = JsonConvert.DeserializeObject<BotConfig>(tr.ReadToEnd()) ?? throw new NullReferenceException("Config is null");
+                BotConfig = JsonConvert.DeserializeObject<BotConfig>(await tr.ReadToEndAsync()) ?? throw new NullReferenceException("Config is null");
             }
         } 
         catch (Exception e)

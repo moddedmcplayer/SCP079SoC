@@ -5,7 +5,7 @@ using Enums;
 
 public static class Log
 {
-    public static void Debug(string message, DebugLevel level)
+    public static void Debug(string message, DebugLevel level = DebugLevel.Debug)
     {
         if((int)level <= (int)ConfigManager.BotConfig.DebugLevel)
         {

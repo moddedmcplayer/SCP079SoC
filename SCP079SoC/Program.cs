@@ -1,9 +1,17 @@
-﻿using SCP079SoC;
+﻿using Discord;
+using SCP079SoC;
 using SCP079SoC.Controllers;
-using SCP079SoC.Enums;
 
-ConfigManager.Init();
+await ConfigManager.Init();
 
-Log.Debug("debug", DebugLevel.Debug);
-Log.LogFatal("funni");
-Console.WriteLine("e");
+try
+{
+    TokenUtils.ValidateToken(TokenType.Bot, ConfigManager.BotConfig.Token);
+}
+catch
+{
+    Log.LogFatal("Token is invalid!");
+}
+
+await DiscordMgr.Init();
+await DiscordMgr.Start();
