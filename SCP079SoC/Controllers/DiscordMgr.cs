@@ -24,7 +24,10 @@ public class DiscordMgr
             LogLevel = debugLevel,
             GatewayIntents = GatewayIntents.All,
             AlwaysDownloadUsers = true,
-            MessageCacheSize = 1000
+            MessageCacheSize = 1000,
+#if DEBUG
+            UseInteractionSnowflakeDate = false
+#endif
         };
 
         Client = new DiscordSocketClient(discordConfig);
@@ -42,18 +45,23 @@ public class DiscordMgr
         await Client.LoginAsync(TokenType.Bot, ConfigManager.BotConfig.Token);
         await Client.StartAsync();
 
-        Client.Ready += () =>
+        // Just make sure discord never gets fast enough to ready and register commands before modules register
+        Client.Ready += async () =>
         {
             Log.Debug("Discord client ready", DebugLevel.Info);
-            return Task.CompletedTask;
+            await InteractionService.RegisterCommandsGloballyAsync();
         };
-        Client.Log += async (msg) => 
-            Log.LogColored("[DEBUG][Discord]", ConsoleColor.DarkBlue, msg.Message, ConsoleColor.DarkGreen, false,
-                3 <= (int)ConfigManager.BotConfig.DebugLevel);
+
+        InteractionService.Log += LogDiscord;
+        Client.Log += LogDiscord;
+            
+        
         Client.MessageReceived += HandleCommand;
         Client.InteractionCreated += HandleInteraction;
 
         await CommandService.AddModulesAsync(assembly: Assembly.GetEntryAssembly(), 
+            services: null);
+        await InteractionService.AddModulesAsync(assembly: Assembly.GetEntryAssembly(), 
             services: null);
         
         await Task.Delay(-1);
@@ -80,6 +88,12 @@ public class DiscordMgr
             services: null);
     }
     
+    private static async Task LogDiscord(LogMessage msg)
+    {
+        Log.LogColored("[DEBUG][Discord]", ConsoleColor.DarkBlue, msg.Message + msg.Exception, ConsoleColor.DarkGreen, false,
+            3 <= (int)ConfigManager.BotConfig.DebugLevel);
+    }
+    
     private static async Task HandleInteraction(SocketInteraction interaction)
     {
         try
@@ -93,7 +107,14 @@ public class DiscordMgr
             Log.Debug(e.ToString(), DebugLevel.Error);
             if (interaction.Type is InteractionType.ApplicationCommand)
             {
-                await interaction.RespondAsync(embed: await ErrorHandler.GetErrorEmbed(e));
+                try
+                {
+                    await interaction.RespondAsync(embed: await ErrorHandler.GetErrorEmbed(e));
+                }
+                catch
+                {
+                    // ignored
+                }
             }
         }
     }
