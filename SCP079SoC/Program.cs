@@ -13,5 +13,7 @@ catch
     Log.LogFatal("Token is invalid!");
 }
 
+await DBMgr.Init();
+
 await DiscordMgr.Init();
 await DiscordMgr.Start();
