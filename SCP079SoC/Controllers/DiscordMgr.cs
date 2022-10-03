@@ -49,7 +49,9 @@ public class DiscordMgr
         Client.Ready += async () =>
         {
             Log.Debug("Discord client ready", DebugLevel.Info);
+#if !DEBUG
             await InteractionService.RegisterCommandsGloballyAsync();
+#endif
         };
 
         InteractionService.Log += LogDiscord;
@@ -75,9 +77,9 @@ public class DiscordMgr
 
         Log.Debug($"Handling command: {message}");
         var guild = (socketMessage.Channel as ITextChannel)?.Guild;
-        char prefix = guild is null ? '!' : (await guild.GetConfig()).Prefix;
+        string prefix = guild is null ? "!" : (await guild.GetConfig()).Prefix;
         int argumentPosition = 0;
-        if (!(message.HasCharPrefix(prefix, ref argumentPosition) || 
+        if (!(message.HasStringPrefix(prefix, ref argumentPosition) || 
               message.HasMentionPrefix(Client.CurrentUser, ref argumentPosition)))
             return;
         

@@ -1,5 +1,7 @@
 ﻿namespace SCP079SoC;
 
+using System.Diagnostics;
+using System.Reflection;
 using Controllers;
 using Enums;
 
@@ -65,5 +67,17 @@ public static class Log
         Console.ForegroundColor = messageColor;
         Console.WriteLine(message);
         Console.ForegroundColor = ConsoleColor.White;
+    }
+
+    public static bool AssertNotNull(object? obj, string parameter = "")
+    {
+        if (obj is null)
+        {
+            StackTrace stackTrace = new StackTrace();
+            Debug($"Object {parameter} is null: {stackTrace.GetFrames()}", DebugLevel.Error);
+            return false;
+        }
+
+        return true;
     }
 }
