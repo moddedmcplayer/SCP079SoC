@@ -12,15 +12,24 @@ public class InfoModule : ModuleBase<SocketCommandContext>
         [Summary("The command to display help for.")]
         string command = "")
     {
+        if (command != "")
+        {
+            return;
+        }
+        
         await ReplyAsync(embed: await EmbedBuilder.CreateEmbed(new EmbedBuilder.AdvancedEmbedInfo()
         {
             Title = "Shank people like a british",
             Description = @"__**Help**__ 
-                          `help`",
+                          `help`
+                           
+                            __**Fun**__
+                            `rep`
+                            `payday`",
             Color = Color.Red,
             Author = "SCP 079 SoC Help Menu",
             IconUrl = Context.Client.CurrentUser.GetAvatarUrl(),
-            Footer = "You can use the `help` command to get help for a specific command.",
+            Footer = "You can use `help` [command] to get help for a specific command.",
         }));
     }
 }

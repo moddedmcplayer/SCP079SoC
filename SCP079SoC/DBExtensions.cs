@@ -17,10 +17,12 @@ public static class DBExtensions
         await using (var cmd = new MySqlCommand())
         {
             cmd.Connection = conn;
-            cmd.CommandText = "INSERT INTO users(UserId, Reputation, UsedReputationTime) VALUES(@UserId, @Reputation, @UsedReputationTime)";
+            cmd.CommandText = "INSERT INTO users(UserId, Money, Reputation, UsedReputationTime, UsedPaydayTime) VALUES(@UserId, @Money, @Reputation, @UsedReputationTime, @UsedPaydayTime)";
             cmd.Parameters.AddWithValue("@UserId", user.Id.ToString());
+            cmd.Parameters.AddWithValue("@Money", 0);
             cmd.Parameters.AddWithValue("@Reputation", 0);
             cmd.Parameters.AddWithValue("@UsedReputationTime", 0.ToString());
+            cmd.Parameters.AddWithValue("@UsedPaydayTime", 0.ToString());
 
             await cmd.ExecuteNonQueryAsync();
         }
@@ -49,8 +51,11 @@ public static class DBExtensions
                     {
                         return new UserEntity
                         {
-                            Reputation = reader.GetInt32(2),
-                            UsedRepTime = Convert.ToInt64(reader.GetString(3))
+                            Id = user.Id,
+                            Money = reader.GetInt64(2),
+                            Reputation = reader.GetInt32(3),
+                            UsedRepTime = Convert.ToInt64(reader.GetString(4)),
+                            UsedPaydayTime = Convert.ToInt64(reader.GetString(5))
                         };
                     }
                 }
@@ -101,7 +106,7 @@ public static class DBExtensions
                     {
                         return new GuildConfig
                         {
-                            GuildId = Convert.ToUInt64(reader.GetString(1)),
+                            GuildId = guild.Id,
                             Prefix = reader.GetString(2)
                         };
                     }

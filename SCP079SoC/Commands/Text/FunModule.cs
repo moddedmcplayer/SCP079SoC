@@ -16,8 +16,8 @@ public class FunModule : ModuleBase<SocketCommandContext>
         var userData = await Context.User.GetUserData();
         var repTime = userData.UsedRepTime;
         var time = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - repTime);
-        var timeNext = TimeSpan.FromTicks((repTime + TimeSpan.FromHours(24).Ticks) - DateTime.UtcNow.Ticks);
-        await ReplyAsync(time.TotalHours > 24
+        var timeNext = TimeSpan.FromTicks((repTime + TimeSpan.FromHours(12).Ticks) - DateTime.UtcNow.Ticks);
+        await ReplyAsync(time.TotalHours > 12
             ? "You can give a reputation point!"
             : $"You can give reputation again in {timeNext.Hours} hours, {timeNext.Minutes} minutes, {timeNext.Seconds} seconds.");
     }
@@ -39,9 +39,10 @@ public class FunModule : ModuleBase<SocketCommandContext>
         var repTime = userData.UsedRepTime;
         Log.AssertNotNull(repTime, "repTime");
         var time = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - repTime);
-        if (time.TotalHours < 24)
+        var timeNext = TimeSpan.FromTicks((repTime + TimeSpan.FromHours(12).Ticks) - DateTime.UtcNow.Ticks);
+        if (time.TotalHours < 12)
         {
-            await ReplyAsync($"You can give reputation again in {time.Hours} hours, {time.Minutes} minutes, {time.Seconds} seconds.");
+            await ReplyAsync($"You can give reputation again in {timeNext.Hours} hours, {timeNext.Minutes} minutes, {timeNext.Seconds} seconds.");
             return;
         }
         
@@ -81,5 +82,63 @@ public class FunModule : ModuleBase<SocketCommandContext>
         }
         
         await ReplyAsync($"You gave a reputation point to {user.Mention}!");
+    }
+
+    [Command("payday")]
+    [Alias("pd")]
+    [Summary("Get daily money.")]
+    public async Task PaydayAsync()
+    {
+        var userData = await Context.User.GetUserData();
+        var pdTime = userData.UsedPaydayTime;
+        Log.AssertNotNull(pdTime, "pdTime");
+        var time = TimeSpan.FromTicks(DateTime.UtcNow.Ticks - pdTime);
+        var timeNext = TimeSpan.FromTicks((pdTime + TimeSpan.FromHours(24).Ticks) - DateTime.UtcNow.Ticks);
+        
+        if (time.TotalHours < 24)
+        {
+            await ReplyAsync($"Next payday in {timeNext.Hours} hours, {timeNext.Minutes} minutes, {timeNext.Seconds} seconds.");
+            return;
+        }
+
+        int leaderboardSpot = 0;
+        
+        try
+        {
+            await using (var conn = new MySqlConnection(DBMgr.ConnectionString))
+            {
+                await conn.OpenAsync();
+                await using (var cmd = new MySqlCommand())
+                {
+                    cmd.Connection = conn;
+                    cmd.CommandText = "UPDATE users SET Money = Money + 10000, UsedPaydayTime = @time WHERE UserId = @id";
+                    cmd.Parameters.AddWithValue("@id", userData.Id);
+                    cmd.Parameters.AddWithValue("@time", DateTime.UtcNow.Ticks);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+                
+                await using (var cmd = new MySqlCommand())
+                {
+                    cmd.Connection = conn;
+                    cmd.CommandText = "SELECT COUNT(Money) FROM users WHERE money >= @userMoney";
+                    cmd.Parameters.AddWithValue("@userMoney", userData.Money);
+                    
+                    await using (MySqlDataReader reader = await cmd.ExecuteReaderAsync())
+                    {
+                        reader.Read();
+                        leaderboardSpot = reader.GetInt32(0);
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Debug(e.ToString(), DebugLevel.Error);
+            await ReplyAsync(embed: await ErrorHandler.GetErrorEmbed(e));
+        }
+
+        await ReplyAsync("Here, have some 💰! **(+10k$)** \n" +
+                         $"You currently have {userData.Money + 10000:#,###0}$. \n" +
+                         $"You're currently **#{(leaderboardSpot != 0 ? leaderboardSpot : "idk")}** on the global leaderboard!");
     }
 }
